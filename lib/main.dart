@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 void main() {
@@ -31,15 +33,31 @@ class NowPlayingView extends StatefulWidget {
 }
 
 class _NowPlayingState extends State<NowPlayingView> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlaying = false;
+  String path = '';
 
   Future<void> _togglePlayPause() async {
-    final endpoint = _isPlaying ? 'pause' : 'play';
-    final response = await http.post(Uri.parse('http://localhost:8000/$endpoint')); //sends request.
-    if (response.statusCode == 200) {
-      setState(() {
-        _isPlaying = !_isPlaying;
-      });
+    final endpoint = 'path';
+
+    if (path.isEmpty) {
+      final response = await http.get(
+        Uri.parse('http://localhost:8000/$endpoint'),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        path = data['path'];
+        await _audioPlayer.play(DeviceFileSource(path));
+      }
+    }
+    setState(() {
+      _isPlaying = !_isPlaying;
+    });
+
+    if (_isPlaying) {
+      await _audioPlayer.resume();
+    } else {
+      await _audioPlayer.pause();
     }
   }
 
@@ -50,11 +68,11 @@ class _NowPlayingState extends State<NowPlayingView> {
       child: Center(
         child: IconButton(
           icon: Icon(
-            _isPlaying ? Icons.play_arrow_rounded : Icons.pause_rounded, // ned to be swapped
+            _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
           ),
           onPressed: _togglePlayPause,
           tooltip: _isPlaying ? 'Pause' : 'Play',
-          color: _isPlaying ? Colors.green : Colors.red,
+          color: _isPlaying ? Colors.red : Colors.green,
           //color: Colors.blue,
           iconSize: 50.0,
         ),

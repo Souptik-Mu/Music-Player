@@ -1,26 +1,21 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from flask import Flask, jsonify , request
+#from flask_cors import CORS
 import pygame.mixer as mx
 
-#todo (setart server) : python -m uvicorn backend_server:app --reload --host 127.0.0.1 --port 8000
-
-
-app = FastAPI()
-
-# Allow all origins for development
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = Flask(__name__)
+#CORS(app)
 
 # Initialize pygame mixer
 mx.init()
-MUSIC_FILE = "D:\Media\SnG\MixPlaylist\HAPPY.mp3"  # Place your mp3 file in the same folder
+MUSIC_FILE = r"D:\Media\SnG\MixPlaylist\HAPPY.mp3"  # Place your mp3 file in the same folder
 
 is_playing = False
 
+@app.route("/path", methods=["GET", "POST"])
+def get_path():
+    return jsonify({"path": MUSIC_FILE})
+
+#@app.route("/play", methods=["POST"])
 @app.post("/play")
 def play():
     global is_playing
@@ -32,7 +27,7 @@ def play():
             mx.music.play()
         
         is_playing = True
-    return {"status": "playing"}
+    return jsonify({"status": "playing"})
 
 @app.post("/pause")
 def pause():
@@ -41,6 +36,9 @@ def pause():
         mx.music.pause()
         print(mx.music.get_pos()) #min is 197
         is_playing = False
-    return {"status": "paused"}
-
+    return jsonify({"status": "paused"}
+)
 #TODO: return song progress, made unpause work, change ui a little bit
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1",port=8000, debug=True)
